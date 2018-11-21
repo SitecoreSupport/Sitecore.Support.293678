@@ -55,7 +55,8 @@ namespace Sitecore.Support.Publishing.Service.Pipelines.BulkPublishingEnd
       }
 
       // Make sure that not more then 1 rebuild is queued.
-      var currentRebuildJobs = JobManager.GetJobs().Where(job => job.Name == "rebuild descendants");
+      var jobName = $"{publishEndResultBatchArgs.TargetInfo.TargetDatabaseName} rebuild descendants";
+      var currentRebuildJobs = JobManager.GetJobs().Where(job => job.Name == jobName);
       if (currentRebuildJobs == null || currentRebuildJobs.Count(job => job.Status.State == JobState.Queued) == 0)
       {
         // Rebuild descendants on target 
@@ -63,7 +64,7 @@ namespace Sitecore.Support.Publishing.Service.Pipelines.BulkPublishingEnd
           .Database.GetDataProviders()
           .FirstOrDefault(x => x as Data.DataProviders.Sql.SqlDataProvider != null);
 
-        JobOptions options = new JobOptions("rebuild descendants", "Sitecore.Support.293678", "publisher", targetDataProvider, "RebuildDescendants");
+        JobOptions options = new JobOptions(jobName, "Sitecore.Support.293678", "publisher", targetDataProvider, "RebuildDescendants");
         JobManager.Start(options);
       }
     }
