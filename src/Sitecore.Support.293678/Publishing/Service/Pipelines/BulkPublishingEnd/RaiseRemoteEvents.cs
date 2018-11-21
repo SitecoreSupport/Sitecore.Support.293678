@@ -53,6 +53,18 @@ namespace Sitecore.Support.Publishing.Service.Pipelines.BulkPublishingEnd
           .GetMethod("RaiseRemoteItemEventsOnTarget", BindingFlags.NonPublic | BindingFlags.Instance)
           .Invoke(this, new object[] { publishEndResultBatchArgs, languageName });
       }
+
+      // Make sure that not more then 1 rebuild is queued.
+      var currentRebuildJobs = JobManager.GetJobs().Where(job => job.Name == "rebuild descendants");
+      if (currentRebuildJobs == null || currentRebuildJobs.Count(job => job.Status.State == JobState.Queued) == 0)
+      {
+        // Rebuild descendants on target 
+        var targetDataProvider = _factory.GetDatabase(publishEndResultBatchArgs.TargetInfo.TargetDatabaseName).Database.GetDataProviders()
+        .FirstOrDefault(x => x as Data.DataProviders.Sql.SqlDataProvider != null);
+
+        JobOptions options = new JobOptions("rebuild descendants", "Sitecore.Support.293678", "publisher", targetDataProvider, "RebuildDescendants");
+        JobManager.Start(options);
+      }
     }
   }
 }
